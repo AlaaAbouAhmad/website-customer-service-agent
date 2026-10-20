@@ -48,7 +48,7 @@ def search_website_docs(query: str) -> str:
         query: Specific customer question or keywords to search for on the website.
 
     Returns:
-        A JSON-formatted string containing matching page titles, URLs, 
+        A JSON-formatted string containing matching page titles, URLs,
         relevance scores, and textual content snippets.
     """
     # Ask Tavily to limit search results to the configured domain.
@@ -60,13 +60,15 @@ def search_website_docs(query: str) -> str:
 
     formatted_results = []
     for i, item in enumerate(results.get("results", []), start=1):
-        formatted_results.append({
-            "number": i,
-            "title": item.get("title", "Untitled Page"),
-            "url": item.get("url", ""),
-            "relevance": round(item.get("score", 0), 3),
-            "snippet": item.get("content", "")[:600],
-        })
+        formatted_results.append(
+            {
+                "number": i,
+                "title": item.get("title", "Untitled Page"),
+                "url": item.get("url", ""),
+                "relevance": round(item.get("score", 0), 3),
+                "snippet": item.get("content", "")[:600],
+            }
+        )
 
     if not formatted_results:
         return f"No relevant public pages were found on {TARGET_WEBSITE_DOMAIN} for this query."
@@ -76,6 +78,7 @@ def search_website_docs(query: str) -> str:
         ensure_ascii=False,
         indent=2,
     )
+
 
 # Model configuration
 model = OpenAIModel(
@@ -116,7 +119,7 @@ customer_service_agent = CodeAgent(
                   - If the information is missing or insufficient, politely explain that the current public documentation doesn't cover it and suggest contacting human support.
                   - Do not invent policies, pricing, URLs, or features.
                   - Do not print tool outputs directly as the final text response.
-                  """
+                  """,
 )
 
 # Gradio interface
@@ -135,6 +138,7 @@ def chat_with_customer_agent(message, history):
         return str(response)
     except Exception as exc:
         return f"An error occurred while processing your request: {exc}"
+
 
 demo = gr.ChatInterface(
     fn=chat_with_customer_agent,
