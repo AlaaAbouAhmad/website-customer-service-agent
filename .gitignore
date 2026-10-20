@@ -12,6 +12,7 @@ __pycache__/
 .venv/
 venv/
 env/
+.python-version
 
 # Test and tooling caches
 .pytest_cache/
