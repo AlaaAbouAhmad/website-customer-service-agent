@@ -1,11 +1,11 @@
 """
 Configurable Website Customer Service Agent
 ==========================================
-This script builds an intelligent customer service agent using `smolagents` 
-and `Tavily` search. It dynamically scopes searches to any configured target website 
-URL to answer customer support queries accurately based on public web info.
+This script builds a customer service agent using `smolagents` and the Tavily
+Search API. It searches public pages within a configured website domain and uses
+the returned results to answer customer support questions.
 
-Author: Open Source Contributor
+Author: Alaa Abou Ahmad
 License: MIT
 """
 
@@ -19,7 +19,6 @@ import gradio as gr
 # Load environment variables from a .env file if present
 load_dotenv()
 
-# Retrieve API keys from environment variables
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
@@ -28,11 +27,7 @@ if not OPENROUTER_API_KEY:
 if not TAVILY_API_KEY:
     raise ValueError("TAVILY_API_KEY environment variable is missing.")
 
-# ==========================================
-# CONFIGURATION
-# ==========================================
-# Retrieve app site config from environment variables
-# Change this target website domain/URL for any client/website you want to support
+# Target website configuration
 TARGET_WEBSITE_DOMAIN = os.getenv("TARGET_WEBSITE_DOMAIN")
 TARGET_WEBSITE_NAME = os.getenv("TARGET_WEBSITE_NAME")
 
@@ -41,12 +36,9 @@ if not TARGET_WEBSITE_DOMAIN:
 if not TARGET_WEBSITE_NAME:
     raise ValueError("TARGET_WEBSITE_NAME environment variable is missing.")
 
-# Initialize Tavily client for web search capabilities
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
-# ==========================================
-# TOOL DEFINITION
-# ==========================================
+# Website search tool
 @tool
 def search_website_docs(query: str) -> str:
     """
@@ -59,7 +51,7 @@ def search_website_docs(query: str) -> str:
         A JSON-formatted string containing matching page titles, URLs, 
         relevance scores, and textual content snippets.
     """
-    # Use Tavily to search strictly within the configured target domain
+    # Ask Tavily to limit search results to the configured domain.
     results = tavily.search(
         query=query,
         include_domains=[TARGET_WEBSITE_DOMAIN],
@@ -85,10 +77,7 @@ def search_website_docs(query: str) -> str:
         indent=2,
     )
 
-# ==========================================
-# MODEL CONFIGURATION
-# ==========================================
-# Configuring OpenAIModel using OpenRouter endpoint
+# Model configuration
 model = OpenAIModel(
     model_id="openrouter/free",
     api_base="https://openrouter.ai/api/v1",
@@ -97,9 +86,7 @@ model = OpenAIModel(
     temperature=0.2,
 )
 
-# ==========================================
-# AGENT SETUP
-# ==========================================
+# Customer service agent
 customer_service_agent = CodeAgent(
     model=model,
     tools=[search_website_docs],
@@ -132,11 +119,17 @@ customer_service_agent = CodeAgent(
                   """
 )
 
-# ==========================================
-# GRADIO INTERFACE
-# ==========================================
+# Gradio interface
 def chat_with_customer_agent(message, history):
-    """Bridge function between Gradio ChatInterface and the CodeAgent."""
+    """Generate a customer support response for a Gradio chat message.
+
+    Args:
+        message: The customer's current message.
+        history: Previous Gradio chat messages. Currently unused by the agent.
+
+    Returns:
+        The agent's response as text, or an error message if processing fails.
+    """
     try:
         response = customer_service_agent.run(message)
         return str(response)
